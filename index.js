@@ -1,9 +1,14 @@
-const { Axios } = require("axios")
+const axios = require("axios")
+const dotenv = require("dotenv")
 
+dotenv.config()
+
+const TELEGRAM_TOKEN = process.env.TELEGRAM_TOKEN
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID
 const MINIMUM_MARKET_CAP = 1000000000
 const CATEGORIES_TRIM = 20
 
-const client = new Axios({
+const client = new axios.Axios({
     baseURL: "https://api.coingecko.com/api/v3/",
     headers: {
         "Accept": "application/json"
@@ -11,6 +16,11 @@ const client = new Axios({
 })
 
 ;(async () => {
+    /* const res = await client.get("https://api.telegram.org/bot" + TELEGRAM_TOKEN + "/getUpdates")
+
+    console.log(JSON.parse(res.data).result[0].channel_post)
+    process.exit(0) */
+
     const connected = await checkConnection()
     
     if ( ! connected) {
@@ -39,19 +49,19 @@ async function work() {
 
     const { categoriesByChange, categoriesByMarketCap } = prepareCategories(categories)
 
-    let message = "Top " + CATEGORIES_TRIM + " categories by market cap change in the last 24h:\n\n"
+    let message = "<u>Top " + CATEGORIES_TRIM + " categories by market cap change in the last 24h:</u>\n\n"
 
     categoriesByChange.forEach(category => {
         message += ` - ${category.market_cap_change_24h > 0 ? "🟢" : "🔴"} "${category.name}" : ${(category.market_cap_change_24h > 0 ? "+" : "") + formatNumber(category.market_cap_change_24h)}%\n`
     })
 
-    message += "\n\nTop " + CATEGORIES_TRIM + " categories by market cap:\n\n"
+    message += "\n\n<u>Top " + CATEGORIES_TRIM + " categories by market cap:</u>\n\n"
 
     categoriesByMarketCap.forEach(category => {
-        message += ` - ${category.market_cap_change_24h > 0 ? "🟢" : "🔴"} "${category.name}" : $${formatNumber(category.market_cap, 0)} (${(category.market_cap_change_24h > 0 ? "+" : "") + formatNumber(category.market_cap_change_24h)}%)\n`
+        message += `${category.market_cap_change_24h > 0 ? "🟢" : "🔴"} "${category.name}" : $${formatNumber(category.market_cap, 0)} (${(category.market_cap_change_24h > 0 ? "+" : "") + formatNumber(category.market_cap_change_24h)}%)\n`
     })
 
-    console.log(message)
+    await sendMessage(message)
 }
 
 function prepareCategories(categories) {
@@ -91,6 +101,18 @@ function formatNumber(val, digits) {
 async function checkConnection() {
     const res = await client.get("ping")
     return res.status === 200
+}
+
+async function sendMessage(message) {
+    console.log("sending message")
+    await axios.post(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, {
+        chat_id: TELEGRAM_CHAT_ID,
+        parse_mode: "html",
+        text: message,
+        disable_web_page_preview: true,
+    }).catch((err) => {
+        throw err
+    })
 }
 
 function throwError(err) {
