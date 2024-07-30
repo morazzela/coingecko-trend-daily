@@ -62,6 +62,8 @@ async function work() {
     })
 
     await sendMessage(message)
+
+    await sleep(60 * 60 * 24)
 }
 
 function prepareCategories(categories) {
@@ -113,6 +115,10 @@ async function sendMessage(message) {
     }).catch((err) => {
         throw err
     })
+}
+
+async function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms))
 }
 
 function throwError(err) {
