@@ -63,7 +63,7 @@ async function work() {
 
     await sendMessage(message)
 
-    await sleep(60 * 60 * 24)
+    await sleep(60 * 60 * 24 * 1000)
 }
 
 function prepareCategories(categories) {
